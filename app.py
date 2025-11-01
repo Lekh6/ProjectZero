@@ -1,7 +1,7 @@
 from flask import Flask, flash, redirect, render_template, request, session
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
-from helpers import login_required
+from helpers import login_required, first_login
 
 app = Flask(__name__)
 
@@ -9,7 +9,7 @@ app.config["SESSION_PERMANENT"] = True
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
-db = db = SQL("sqlite:///users.db")
+db = SQL("sqlite:///users.db")
 
 if __name__ == "__main__":
     app.run(debug=True)
@@ -30,8 +30,10 @@ def login():
             flash('User does not exist, Please Register')
             return redirect('/register')
         
-        session['user_id'] = check[0]['id']
-
+        uid = check[0]['id']
+        session['user_id'] = uid
+        if not first_login(uid):
+            flash('Error setting up tasks, Please try again!')
         return redirect{'/'}
     return render_template('login.html')
 
@@ -59,4 +61,70 @@ def register():
 @login_required
 @app.route("/", methods = ['GET', 'POST'])
 def homepage():
+    uid = session['user_id']
+    if request.method == 'POST':
+        task = request.form.get('tasks')
+        priority = request.form.get('priority')
+        desc = request.form.get('description')
+        due = request.form.get('due')
+        if not task:
+            flash('task cannot be empty!')
+        else:
+            db.execute(f'insert into data_{uid}(title, priority, description, due) values(?, ?, ?, ?)', task, priority, desc, due)
+            db.commit()
+        return redirect('/')
+    dat = db.execute(f'Select * from data_{uid}'),fetchall()
+    return render_template('homepage.html', tasks = dat)
+
+
+@login_required
+@app.route('/timeline', methods = ['GET', 'POST'])
+def timeline():
+    uid = session['user_id']
+    filter = request.args.get('filter', 'week')
+    act = {'week': 7, 'month' : 30, 'year': 365}[filter]
+    query = db.execute(f"select date(creation) as day, count(*) as total from user_{uid} where creation >= date('now', ?) group by day", f'-{act} days')
+    return render_template('timeline.html', data = query, period = filter)
+
+@login_required
+@app.route('/notes', methods = ['GET', 'POST'])
+def notes():
+    uid = session['user_id']
+
+    if request.method == 'POST':
+        note = request.form.get('notes')
+        if note:
+            db.execute(f'insert into notes_{uid}(content) values(?)', note)
+        return redirect('/notes')
     
+    notes = db.execute(f'select * from notes_{uid} order by creation desc')
+    return render_template('notes.html', notes = notes)
+
+@login_required
+@app.route('/overview', methods = ['GET', 'POST'])
+def overview():
+    uid = session['user_id']
+    if request.method == 'POST':
+        title = request.form.get('title')
+        desc = request.form.get('description')
+        due = request.form.get('due')
+
+        db.execute(f"INSERT INTO data_{uid} (title, description, due) VALUES (?, ?, ?)", title, desc, due)
+        return redirect('/overview')
+    
+    cat = {'now': [], 'later': [], 'indefinite': [], 'flexible': []}
+    tasks = db.execute(f'select * from data_{uid}')
+
+    for task in tasks:
+        diff = (task['due'] - datetime.now().date()).days
+        if diff <= 1:
+            filt = 'now'
+        elif diff <= 7:
+            filt = 'later'
+        elif diff <= 31:
+            filt = 'flexible'
+        else:
+            filt = 'indefinite'
+        cat[filt].append(task)
+    return render_template('overview.html', cat = cat)
+            
