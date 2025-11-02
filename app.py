@@ -1,9 +1,11 @@
-from flask import Flask, flash, redirect, render_template, request, session
+from flask import Flask, flash, redirect, render_template, request, session, url_for
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 from helpers import login_required, first_login
+from cs50 import SQL
 
 app = Flask(__name__)
+app.secret_key = "supersecretkey"
 
 app.config["SESSION_PERMANENT"] = True
 app.config["SESSION_TYPE"] = "filesystem"
@@ -11,33 +13,26 @@ Session(app)
 
 db = SQL("sqlite:///users.db")
 
-if __name__ == "__main__":
-    app.run(debug=True)
-
 
 @app.route('/login', methods = ['GET', 'POST'])
 def login():
     session.clear()
-
     if request.method == 'POST':
         username = request.form.get('username')
-        pass = request.form.get('password')
-        if not username or pass:
+        password = request.form.get('password')
+        if not username or not password:
             flash("Please enter all details!")
             return redirect('/login')
-        check = db.execute('select username from users where username = ?', username)
-        if len(check) != 1 or not check_password_hash(check[0]['hash'], pass):
-            flash('User does not exist, Please Register')
-            return redirect('/register')
-        
-        uid = check[0]['id']
+        check = db.execute('select uid, username, passhash from users where username = ?', username)
+        if len(check) != 1 or not check_password_hash(check[0]['passhash'], password):
+            print(f'DEBUG: {len(check)}')
+            return redirect('/login')            
+        uid = check[0]['uid']
         session['user_id'] = uid
-        if not first_login(uid):
-            flash('Error setting up tasks, Please try again!')
-        return redirect{'/'}
+        return redirect('/')
     return render_template('login.html')
 
-@app.route('/', methods = ['GET', 'POST'])
+@app.route('/register', methods = ['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form.get('username')
@@ -49,17 +44,19 @@ def register():
         elif password != repass:
             flash('Passwords do not match!')
             return redirect('/register')
-        msg = db.execute('insert into users(username, hash) values(? , ?)', username, generate_password_hash(password))
+        msg = db.execute('insert into users(username, passhash) values(? , ?)', username, generate_password_hash(password))
         if not msg:
             flash('Registration failed! Please try again!')
             return redirect('/register')
-        db.commit()
+        uid = (db.execute('select uid from users where username = ?', username))[0]['uid']
+        ch = first_login(uid)
         flash('Registration successful! Please log in!')
         return redirect('/login')
     return render_template('register.html')
 
-@login_required
+ 
 @app.route("/", methods = ['GET', 'POST'])
+@login_required
 def homepage():
     uid = session['user_id']
     if request.method == 'POST':
@@ -71,14 +68,13 @@ def homepage():
             flash('task cannot be empty!')
         else:
             db.execute(f'insert into data_{uid}(title, priority, description, due) values(?, ?, ?, ?)', task, priority, desc, due)
-            db.commit()
         return redirect('/')
     dat = db.execute(f'Select * from data_{uid}'),fetchall()
     return render_template('homepage.html', tasks = dat)
 
 
-@login_required
 @app.route('/timeline', methods = ['GET', 'POST'])
+@login_required
 def timeline():
     uid = session['user_id']
     filter = request.args.get('filter', 'week')
@@ -86,8 +82,8 @@ def timeline():
     query = db.execute(f"select date(creation) as day, count(*) as total from user_{uid} where creation >= date('now', ?) group by day", f'-{act} days')
     return render_template('timeline.html', data = query, period = filter)
 
-@login_required
 @app.route('/notes', methods = ['GET', 'POST'])
+@login_required
 def notes():
     uid = session['user_id']
 
@@ -100,8 +96,8 @@ def notes():
     notes = db.execute(f'select * from notes_{uid} order by creation desc')
     return render_template('notes.html', notes = notes)
 
-@login_required
 @app.route('/overview', methods = ['GET', 'POST'])
+@login_required
 def overview():
     uid = session['user_id']
     if request.method == 'POST':
@@ -127,4 +123,9 @@ def overview():
             filt = 'indefinite'
         cat[filt].append(task)
     return render_template('overview.html', cat = cat)
-            
+
+
+@app.route('/ts')
+def test_flash():
+    flash("Hello from Flask!")
+    return redirect('/login')

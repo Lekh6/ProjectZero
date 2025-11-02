@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+    <div class="bg-white shadow-xl rounded-2xl p-8 w-full max-w-sm">
+        <h2 class="text-2xl font-bold text-center mb-6">Create Account</h2>
+        <form action="/register" method="post">
+            <div class="mb-4">
+                <label class="form-label">Username</label>
+                <input type="text" class="form-control" name="username" required>
+            </div>
+            <div class="mb-4">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-control" name="password" required>
+            </div>
+            <div class="mb-4">
+                <label class="form-label">Re-enter Password</label>
+                <input type="password" class="form-control" name="repass" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 py-2 rounded-lg">Register</button>
+        </form>
+        <p class="text-center mt-4 text-gray-600 text-sm">
+            Already have an account?
+            <a href="/login" class="text-blue-500 hover:underline">Login</a>
+        </p>
+    </div>
+</body>
+</html>

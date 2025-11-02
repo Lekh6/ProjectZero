@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4>Timeline / {{ period|title }}</h4>
+  <div>
+    <a href="/timeline?filter=week" class="btn btn-sm btn-outline-primary">Week</a>
+    <a href="/timeline?filter=month" class="btn btn-sm btn-outline-primary">Month</a>
+    <a href="/timeline?filter=year" class="btn btn-sm btn-outline-primary">Year</a>
+  </div>
+</div>
+
+<div class="card p-4">
+  <canvas id="timelineChart" height="120"></canvas>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const raw = {{ data|tojson }};
+const labels = raw.map(r=>r.day);
+const values = raw.map(r=>r.total);
+new Chart(document.getElementById('timelineChart'), {
+  type: 'line',
+  data: { labels, datasets: [{ label: 'Tasks', data: values, tension: 0.3 }]},
+  options: { responsive:true, maintainAspectRatio:false }
+});
+</script>
+{% endblock %}

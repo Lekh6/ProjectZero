@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row">
+  <div class="col-md-4">
+    <form method="post">
+      <textarea name="notes" class="form-control mb-2" placeholder="Write a quick note"></textarea>
+      <button class="btn btn-success w-100">Save Note</button>
+    </form>
+  </div>
+  <div class="col-md-8">
+    {% for n in notes %}
+      <div class="card p-3 mb-2">
+        <div class="small text-muted">{{ n.creation }}</div>
+        <div>{{ n.content }}</div>
+      </div>
+    {% else %}
+      <div class="card p-3">No notes yet.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

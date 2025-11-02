@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+  {% for k, v in cat.items() %}
+  <div class="card p-3">
+    <h6 class="mb-2 text-capitalize">{{ k }} <span class="badge bg-light text-dark float-end">{{ v|length }}</span></h6>
+    <div class="space-y-2">
+      {% for task in v %}
+        <div class="p-2 border rounded">
+          <div class="fw-bold">{{ task.title }}</div>
+          <div class="small text-muted">{{ task.due }}</div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
