@@ -3,6 +3,8 @@ from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 from helpers import login_required, first_login
 from cs50 import SQL
+from datetime import datetime, date
+
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
@@ -21,7 +23,7 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
         if not username or not password:
-            flash("Please enter all details!")
+            print("Please enter all details!")
             return redirect('/login')
         check = db.execute('select uid, username, passhash from users where username = ?', username)
         if len(check) != 1 or not check_password_hash(check[0]['passhash'], password):
@@ -39,18 +41,18 @@ def register():
         password = request.form.get('password')
         repass = request.form.get('repass')
         if not username or not password or not repass:
-            flash('Please enter all details!')
+            print('Please enter all details!')
             return redirect('/register')
         elif password != repass:
-            flash('Passwords do not match!')
+            print('Passwords do not match!')
             return redirect('/register')
         msg = db.execute('insert into users(username, passhash) values(? , ?)', username, generate_password_hash(password))
         if not msg:
-            flash('Registration failed! Please try again!')
+            print('Registration failed! Please try again!')
             return redirect('/register')
         uid = (db.execute('select uid from users where username = ?', username))[0]['uid']
-        ch = first_login(uid)
-        flash('Registration successful! Please log in!')
+        first_login(uid)
+        print('Registration successful! Please log in!')
         return redirect('/login')
     return render_template('register.html')
 
@@ -63,13 +65,18 @@ def homepage():
         task = request.form.get('tasks')
         priority = request.form.get('priority')
         desc = request.form.get('description')
-        due = request.form.get('due')
+        due = request.form.get('finby')
+        print("DUE IS: ", due)
         if not task:
-            flash('task cannot be empty!')
+            print('task cannot be empty!')
         else:
-            db.execute(f'insert into data_{uid}(title, priority, description, due) values(?, ?, ?, ?)', task, priority, desc, due)
+            try:
+                db.execute(f'insert into data_{uid}(title, priority, description, finby) values(?, ?, ?, ?)', task, priority, desc, due)
+            except Exception as e:
+                print(task, priority, desc, due)
+                print('SQL ERROR: ', e)
         return redirect('/')
-    dat = db.execute(f'Select * from data_{uid}'),fetchall()
+    dat = db.execute(f'Select * from data_{uid}')
     return render_template('homepage.html', tasks = dat)
 
 
@@ -79,7 +86,7 @@ def timeline():
     uid = session['user_id']
     filter = request.args.get('filter', 'week')
     act = {'week': 7, 'month' : 30, 'year': 365}[filter]
-    query = db.execute(f"select date(creation) as day, count(*) as total from user_{uid} where creation >= date('now', ?) group by day", f'-{act} days')
+    query = db.execute(f"select date(creation) as day, count(*) as total from data_{uid} where creation >= date('now', ?) group by day", f'-{act} days')
     return render_template('timeline.html', data = query, period = filter)
 
 @app.route('/notes', methods = ['GET', 'POST'])
@@ -103,21 +110,33 @@ def overview():
     if request.method == 'POST':
         title = request.form.get('title')
         desc = request.form.get('description')
-        due = request.form.get('due')
+        due = request.form.get('finby')
 
-        db.execute(f"INSERT INTO data_{uid} (title, description, due) VALUES (?, ?, ?)", title, desc, due)
+        db.execute(f"INSERT INTO data_{uid} (title, description, finby) VALUES (?, ?, ?)", title, desc, due)
         return redirect('/overview')
     
     cat = {'now': [], 'later': [], 'indefinite': [], 'flexible': []}
     tasks = db.execute(f'select * from data_{uid}')
+    findate = 0
+    for task in tasks:  
+        finby = task['finby']
+        print("FINBY IS", finby)
+        if not finby:
+            diff = None
+        else:
+            try:
+                findate = datetime.strptime(task['finby'], "%Y-%m-%d").date()
 
-    for task in tasks:
-        diff = (task['due'] - datetime.now().date()).days
-        if diff <= 1:
+            except ValueError:
+                print("VALUERROR")
+                findate = None
+            diff = (findate - date.today()).days if findate else None
+        print('FINDATE IS :',findate,'|DIFF IS:', diff,'AND ', tasks[1]['finby'])
+        if diff is not None and diff <= 1:
             filt = 'now'
-        elif diff <= 7:
+        elif diff is not None and diff <= 7:
             filt = 'later'
-        elif diff <= 31:
+        elif diff is not None and diff <= 31:
             filt = 'flexible'
         else:
             filt = 'indefinite'
@@ -127,5 +146,5 @@ def overview():
 
 @app.route('/ts')
 def test_flash():
-    flash("Hello from Flask!")
+    print("Hello from Flask!")
     return redirect('/login')
