@@ -144,7 +144,9 @@ def overview():
     return render_template('overview.html', cat = cat)
 
 
-@app.route('/ts')
-def test_flash():
-    print("Hello from Flask!")
+
+@app.route('/logout')
+@login_required
+def logout():
+    session.clear()
     return redirect('/login')

@@ -1,39 +1,125 @@
-{% extends "base.html" %}
-{% block title %}Home{% endblock %}
-{% block content %}
-<div class="grid md:grid-cols-3 gap-6">
-  <!-- Add Task card -->
-  <div class="md:col-span-1">
-    <div class="card p-4 shadow-sm">
-      <h5 class="card-title">Add task</h5>
-      <form method="post" class="space-y-3">
-        <input name="tasks" placeholder="Title" class="form-control" />
-        <select name="priority" class="form-select">
-          <option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option>
-        </select>
-        <textarea name="description" class="form-control" placeholder="Description"></textarea>
-        <input type="date" name="finby" class="form-control" />
-        <button class="btn btn-primary w-100">Add</button>
-      </form>
-    </div>
-  </div>
+{% extends "layoutm.html" %}
 
-  <!-- Task list -->
-  <div class="md:col-span-2 space-y-3">
-    {% for t in tasks %}
-      <div class="card p-3 d-flex align-items-center justify-content-between">
-        <div>
-          <h6 class="mb-1">{{ t.title }}</h6>
-          <small class="text-muted">{{ t.description }}</small>
-        </div>
-        <div class="text-end">
-          <span class="badge rounded-pill {% if t.priority == 'high' %}bg-danger{% elif t.priority=='med' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ t.priority }}</span>
-          <div class="small text-muted">{{ t.due }}</div>
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="row g-4">
+    <!-- Sidebar (fixed for md+, hidden on small screens) -->
+    <nav id="sidebar" class="d-none d-md-block position-fixed h-100"
+         style="width:220px; top:0; left:0; padding:1.25rem; background:transparent; border-right:1px solid rgba(198,40,40,0.08); z-index:1000;">
+      <ul class="nav flex-column">
+        <li class="nav-item mb-2"><a href="/" class="nav-link text-light">Home</a></li>
+        <li class="nav-item mb-2"><a href="/timeline" class="nav-link text-light">Timeline</a></li>
+        <li class="nav-item mb-2"><a href="/notes" class="nav-link text-light">Notes</a></li>
+        <li class="nav-item mb-2"><a href="/overview" class="nav-link text-light">Overview</a></li>
+        <li class="nav-item"><a href="/logout" class="nav-link text-danger">Logout</a></li>
+      </ul>
+    </nav>
+
+    <!-- Main area: give left margin equal to sidebar width for md+ -->
+    <div class="col-12" style="margin-left:0; margin-top:0; padding-left:0;"
+         id="mainArea">
+      <div class="row" style="margin-left:0;">
+        <!-- Use CSS to add left margin on md+ so layout doesn't overlap fixed sidebar -->
+        <div class="col-12" style="padding-left:1rem;">
+          <div class="row g-4" id="dashboardRow" style="margin-left:0;">
+            <!-- Pie chart (left) -->
+            <div class="col-lg-3 col-md-4">
+              <div class="card bg-dark border-0 p-3 shadow-sm">
+                <h6 class="text-danger mb-3">Priority</h6>
+                <canvas id="priorityChart" aria-label="Priority distribution chart"></canvas>
+              </div>
+            </div>
+
+            <!-- Task list (center) -->
+            <div class="col-lg-5 col-md-6">
+              <div class="card bg-dark border-0 p-3 shadow-sm h-100">
+                <h5 class="mb-3 text-danger">Your Tasks</h5>
+                <div class="overflow-auto" style="max-height:65vh;">
+                  {% for task in tasks %}
+                  <div class="mb-3 pb-2" style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                    <div class="d-flex justify-content-between align-items-start">
+                      <h6 class="text-light mb-1">{{ task.title }}</h6>
+                      <small class="text-secondary">{{ task.finby or 'No deadline' }}</small>
+                    </div>
+                    <small class="text-muted">{{ task.priority | capitalize }}</small>
+                  </div>
+                  {% else %}
+                  <p class="text-secondary">No tasks yet.</p>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick notes (right) -->
+            <div class="col-lg-4">
+              <div class="card bg-dark border-0 p-3 shadow-sm h-100">
+                <h6 class="text-danger mb-3">Quick Notes</h6>
+                <form method="post" action="/notes">
+                  <textarea name="notes" class="form-control bg-dark text-light mb-3" rows="6"
+                            placeholder="Write something..."></textarea>
+                  <button class="btn btn-danger w-100" type="submit">Save Note</button>
+                </form>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
-    {% else %}
-      <div class="card p-3">No tasks yet — add one!</div>
-    {% endfor %}
+    </div>
   </div>
 </div>
+
+<!-- Chart.js (ensure this loads after the canvas exists) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Sidebar toggle (works on small screens: toggles d-none)
+  (function () {
+    const toggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('sidebar');
+    toggle && toggle.addEventListener('click', () => {
+      if (!sidebar) return;
+      sidebar.classList.toggle('d-none');
+    });
+
+    // Add left margin to main area on md+ so it doesn't sit under fixed sidebar.
+    const applyMainMargin = () => {
+      const main = document.getElementById('mainArea');
+      if (!main) return;
+      if (window.innerWidth >= 768) { // md breakpoint
+        main.style.marginLeft = '220px';
+      } else {
+        main.style.marginLeft = '0';
+        // ensure sidebar hidden by default on small screens
+        sidebar && sidebar.classList.add('d-none');
+      }
+    };
+    applyMainMargin();
+    window.addEventListener('resize', applyMainMargin);
+
+    // Chart.js: get 2d context
+    const canvas = document.getElementById('priorityChart');
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: ['High', 'Medium', 'Low'],
+          datasets: [{
+            data: [5, 8, 2], // replace with real values via template if needed
+            backgroundColor: ['#8b0000', '#c62828', '#ef9a9a'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          plugins: { legend: { labels: { color: '#eee' } } },
+          responsive: true,
+          maintainAspectRatio: true
+        }
+      });
+    }
+  })();
+</script>
+
 {% endblock %}

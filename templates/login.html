@@ -1,17 +1,23 @@
-<!-- login.html -->
-{% extends "base.html" %}
-{% block content %}
-{% if request.args.get('msg') %}
-  <script>
-    showAlert("{{ request.args.get('msg') }}", "{{ request.args.get('type', 'error') }}");
-  </script>
-{% endif %}
+{% extends "layouta.html" %}
 
-<form method="post" class="mx-auto" style="max-width:420px">
-  <h3>Login</h3>
-  <input name="username" class="form-control mb-2" placeholder="Username" />
-  <input type="password" name="password" class="form-control mb-2" placeholder="Password" />
-  <button class="btn btn-primary w-100", type = 'submit'>Login</button>
-  <a href="/register" class="d-block mt-2">Register</a>
-</form>
+{% block title %}
+    Login
+{% endblock %}
+
+{% block content %}
+<div class="card p-4 shadow-sm" style="width: 22rem;">
+  <h4 class="text-center mb-3">Login</h4>
+  <form method="post">
+    <div class="mb-3">
+      <input type="text" name="username" class="form-control" placeholder="Username" required>
+    </div>
+    <div class="mb-3">
+      <input autofill = 'off' type="password" name="password" class="form-control" placeholder="Password" required>
+    </div>
+    <button type="submit" class="btn btn-primary w-100">Login</button>
+  </form>
+  <div class="text-center mt-3">
+    <a href="/register" class="text-decoration-none">Don't have an account? Register</a>
+  </div>
+</div>
 {% endblock %}

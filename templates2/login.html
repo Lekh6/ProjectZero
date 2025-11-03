@@ -1,0 +1,17 @@
+<!-- login.html -->
+{% extends "base.html" %}
+{% block content %}
+{% if request.args.get('msg') %}
+  <script>
+    showAlert("{{ request.args.get('msg') }}", "{{ request.args.get('type', 'error') }}");
+  </script>
+{% endif %}
+
+<form method="post" class="mx-auto" style="max-width:420px">
+  <h3>Login</h3>
+  <input name="username" class="form-control mb-2" placeholder="Username" />
+  <input type="password" name="password" class="form-control mb-2" placeholder="Password" />
+  <button class="btn btn-primary w-100", type = 'submit'>Login</button>
+  <a href="/register" class="d-block mt-2">Register</a>
+</form>
+{% endblock %}
