@@ -76,9 +76,18 @@ def homepage():
                 print(task, priority, desc, due)
                 print('SQL ERROR: ', e)
         return redirect('/')
-    dat = db.execute(f'Select * from data_{uid}')
+    dat = db.execute(f'Select * from data_{uid} where status = 0 order by date(finby) asc')
+    print(dat, uid)
     return render_template('homepage.html', tasks = dat)
 
+@app.route('/update', methods = ["POST"])
+@login_required
+def update():
+    uid = session['user_id']
+    tid = request.form.get('task_id')
+    done = 1 if request.form.get('done') else 0
+    db.execute(f"update data_{uid} set status = ? where id = ?", done, tid)
+    return redirect('/')
 
 @app.route('/timeline', methods = ['GET', 'POST'])
 @login_required

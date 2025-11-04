@@ -1,125 +1,188 @@
 {% extends "layoutm.html" %}
-
 {% block title %}Home{% endblock %}
-
 {% block content %}
-<div class="container-fluid mt-4">
-  <div class="row g-4">
-    <!-- Sidebar (fixed for md+, hidden on small screens) -->
-    <nav id="sidebar" class="d-none d-md-block position-fixed h-100"
-         style="width:220px; top:0; left:0; padding:1.25rem; background:transparent; border-right:1px solid rgba(198,40,40,0.08); z-index:1000;">
-      <ul class="nav flex-column">
-        <li class="nav-item mb-2"><a href="/" class="nav-link text-light">Home</a></li>
-        <li class="nav-item mb-2"><a href="/timeline" class="nav-link text-light">Timeline</a></li>
-        <li class="nav-item mb-2"><a href="/notes" class="nav-link text-light">Notes</a></li>
-        <li class="nav-item mb-2"><a href="/overview" class="nav-link text-light">Overview</a></li>
-        <li class="nav-item"><a href="/logout" class="nav-link text-danger">Logout</a></li>
-      </ul>
-    </nav>
+<div class="container-fluid mt-4 position-relative px-0 min-vh-100">
 
-    <!-- Main area: give left margin equal to sidebar width for md+ -->
-    <div class="col-12" style="margin-left:0; margin-top:0; padding-left:0;"
-         id="mainArea">
-      <div class="row" style="margin-left:0;">
-        <!-- Use CSS to add left margin on md+ so layout doesn't overlap fixed sidebar -->
-        <div class="col-12" style="padding-left:1rem;">
-          <div class="row g-4" id="dashboardRow" style="margin-left:0;">
-            <!-- Pie chart (left) -->
-            <div class="col-lg-3 col-md-4">
-              <div class="card bg-dark border-0 p-3 shadow-sm">
-                <h6 class="text-danger mb-3">Priority</h6>
-                <canvas id="priorityChart" aria-label="Priority distribution chart"></canvas>
-              </div>
-            </div>
+  <!-- Sidebar -->
+  <nav id="sidebar"
+       class="position-fixed top-0 start-0 vh-100 bg-dark bg-opacity-75 p-4 shadow-lg d-none"
+       style="width:240px; backdrop-filter:blur(20px); z-index:1100;
+              border-right:1px solid rgba(255,255,255,0.1);
+              transform:translateX(-100%); transition:transform .35s ease;">
+    <ul class="nav flex-column">
+      <li class="nav-item mb-2"><a href="/" class="nav-link text-light">Home</a></li>
+      <li class="nav-item mb-2"><a href="/timeline" class="nav-link text-light">Timeline</a></li>
+      <li class="nav-item mb-2"><a href="/notes" class="nav-link text-light">Notes</a></li>
+      <li class="nav-item mb-2"><a href="/overview" class="nav-link text-light">Overview</a></li>
+      <li class="nav-item"><a href="/logout" class="nav-link text-danger">Logout</a></li>
+    </ul>
+  </nav>
 
-            <!-- Task list (center) -->
-            <div class="col-lg-5 col-md-6">
-              <div class="card bg-dark border-0 p-3 shadow-sm h-100">
-                <h5 class="mb-3 text-danger">Your Tasks</h5>
-                <div class="overflow-auto" style="max-height:65vh;">
-                  {% for task in tasks %}
-                  <div class="mb-3 pb-2" style="border-bottom:1px solid rgba(255,255,255,0.04);">
-                    <div class="d-flex justify-content-between align-items-start">
-                      <h6 class="text-light mb-1">{{ task.title }}</h6>
-                      <small class="text-secondary">{{ task.finby or 'No deadline' }}</small>
-                    </div>
-                    <small class="text-muted">{{ task.priority | capitalize }}</small>
-                  </div>
-                  {% else %}
-                  <p class="text-secondary">No tasks yet.</p>
-                  {% endfor %}
-                </div>
-              </div>
-            </div>
+  <div id="blurOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none"
+       style="backdrop-filter:blur(10px); background:rgba(60,0,0,0.45);
+              z-index:1050; opacity:0; transition:opacity .35s ease;"></div>
 
-            <!-- Quick notes (right) -->
-            <div class="col-lg-4">
-              <div class="card bg-dark border-0 p-3 shadow-sm h-100">
-                <h6 class="text-danger mb-3">Quick Notes</h6>
-                <form method="post" action="/notes">
-                  <textarea name="notes" class="form-control bg-dark text-light mb-3" rows="6"
-                            placeholder="Write something..."></textarea>
-                  <button class="btn btn-danger w-100" type="submit">Save Note</button>
+  <button id="sidebarToggle" class="btn btn-danger position-fixed"
+          style="top:1.2rem; left:1.2rem; z-index:1200; border-radius:50%; width:45px; height:45px;">
+    <
+  </button>
+
+  <div class="d-flex flex-wrap justify-content-between align-items-stretch w-100 px-4"
+       style="margin-top:5rem; gap:1.5rem;">
+
+    <!-- Priority Chart -->
+    <div class="card bg-dark border-0 p-3 shadow-sm"
+         style="flex:1 1 calc(33.33% - 1.5rem); min-width:300px;">
+      <h6 class="text-danger mb-3">Priority</h6>
+      <canvas id="priorityChart"></canvas>
+    </div>
+
+    <!-- Tasks Section -->
+    <div class="card border-0 p-3 shadow-sm"
+         style="flex:1 1 calc(33.33% - 1.5rem); min-width:300px;
+                backdrop-filter:blur(18px); background:rgba(30,30,30,0.35); position:relative; overflow:hidden;">
+      <h5 class="mb-3 text-danger">Your Tasks</h5>
+      <div class="overflow-auto pe-2" style="max-height:65vh;">
+          {% for task in tasks %}
+              <div class="mb-3 pb-2 border-bottom border-secondary border-opacity-10 d-flex align-items-center">
+                
+                <form method="post" action="/update" class="me-2">
+                  <input type="hidden" name="task_id" value="{{ task.id }}">
+                  <input type="checkbox" name="done" onchange="this.form.submit()" {% if task.done %}checked{% endif %}>
                 </form>
-              </div>
-            </div>
 
-          </div>
-        </div>
+                <div class="flex-grow-1">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <h6 class="text-light mb-1 {% if task.done %}text-decoration-line-through opacity-50{% endif %}">
+                      {{ task.title }}
+                    </h6>
+                    <small class="text-secondary">{{ task.finby or 'No deadline' }}</small>
+                  </div>
+                  <small class="text-muted">{{ task.priority | capitalize }}</small>
+                </div>
+
+              </div>
+              {% else %}
+              <p class="text-secondary">No tasks yet.</p>
+              {% endfor %}
+      </div>
+      <div class="position-absolute bottom-0 start-0 w-100"
+           style="height:70px; background:linear-gradient(to bottom, rgba(30,30,30,0), rgba(15,15,15,0.85)); pointer-events:none;">
       </div>
     </div>
+
+    <!-- Notes Section -->
+    <div class="card bg-dark border-0 p-3 shadow-sm"
+         style="flex:1 1 calc(33.33% - 1.5rem); min-width:300px;">
+      <h6 class="text-danger mb-3">Quick Notes</h6>
+      <div class="btn-group mb-2" role="group">
+        <button type="button" class="btn btn-sm btn-outline-light" onclick="formatText('bold')"><b>B</b></button>
+        <button type="button" class="btn btn-sm btn-outline-light" onclick="formatText('italic')"><i>I</i></button>
+        <button type="button" class="btn btn-sm btn-outline-light" onclick="formatText('underline')"><u>U</u></button>
+        <button type="button" class="btn btn-sm btn-outline-light" onclick="formatText('insertUnorderedList')">•</button>
+      </div>
+      <form method="post" action="/notes">
+        <div id="noteEditor" class="form-control bg-dark text-light mb-3" contenteditable="true"
+             style="height:200px; overflow-y:auto;"></div>
+        <input type="hidden" name="notes" id="hiddenNote">
+        <button class="btn btn-danger w-100" type="submit" onclick="saveNote()">Save Note</button>
+      </form>
+    </div>
+
   </div>
 </div>
 
-<!-- Chart.js (ensure this loads after the canvas exists) -->
+<!-- Floating Add Button -->
+<button id="addTaskBtn" class="btn btn-danger position-fixed"
+        style="bottom:2.5rem; right:2.5rem; border-radius:50%; width:65px; height:65px; font-size:2rem; z-index:2000;">
+  +
+</button>
+
+<!-- Overlay Form -->
+<div id="taskOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none"
+     style="background:rgba(0,0,0,0.55); backdrop-filter:blur(10px);
+            z-index:2100; display:flex; justify-content:center; align-items:center;">
+  <form method="post" action="/" class="bg-dark text-light p-4 rounded shadow"
+        style="width:340px; border:1px solid rgba(255,255,255,0.1);">
+    <h5 class="mb-3 text-danger">New Task</h5>
+    <input type="text" name="tasks" class="form-control mb-3" placeholder="Title" required>
+    <select name="priority" class="form-select mb-3">
+      <option value="low">Low</option>
+      <option value="medium">Medium</option>
+      <option value="high">High</option>
+    </select>
+    <textarea name="description" class="form-control mb-3" rows="3" placeholder="Description"></textarea>
+    <input type="date" name="finby" class="form-control mb-3">
+    <div class="d-flex justify-content-between">
+      <button type="submit" class="btn btn-danger">Add</button>
+      <button type="button" id="closeOverlay" class="btn btn-outline-light">Cancel</button>
+    </div>
+  </form>
+</div>
+
+<!-- Chart + Interactions -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  // Sidebar toggle (works on small screens: toggles d-none)
-  (function () {
-    const toggle = document.getElementById('sidebarToggle');
-    const sidebar = document.getElementById('sidebar');
-    toggle && toggle.addEventListener('click', () => {
-      if (!sidebar) return;
-      sidebar.classList.toggle('d-none');
-    });
+(function() {
+  const sidebar = document.getElementById('sidebar');
+  const blurOverlay = document.getElementById('blurOverlay');
+  const toggleBtn = document.getElementById('sidebarToggle');
 
-    // Add left margin to main area on md+ so it doesn't sit under fixed sidebar.
-    const applyMainMargin = () => {
-      const main = document.getElementById('mainArea');
-      if (!main) return;
-      if (window.innerWidth >= 768) { // md breakpoint
-        main.style.marginLeft = '220px';
-      } else {
-        main.style.marginLeft = '0';
-        // ensure sidebar hidden by default on small screens
-        sidebar && sidebar.classList.add('d-none');
+  function openSidebar(button) {
+    sidebar.classList.remove('d-none');
+    button.style.display = 'none';
+    setTimeout(() => {
+      sidebar.style.transform = 'translateX(0)';
+      blurOverlay.classList.remove('d-none');
+      setTimeout(() => blurOverlay.style.opacity = '1', 10);
+    }, 10);
+  }
+
+  function closeSidebar(button) {
+    sidebar.style.transform = 'translateX(-100%)';
+    blurOverlay.style.opacity = '0';
+    setTimeout(() => {
+      sidebar.classList.add('d-none');
+      blurOverlay.classList.add('d-none');
+      button.style.display = 'block';
+    }, 350);
+  }
+
+  toggleBtn && toggleBtn.addEventListener('click', () => openSidebar(toggleBtn));
+  blurOverlay && blurOverlay.addEventListener('click', () => closeSidebar(toggleBtn));
+
+  const addBtn = document.getElementById('addTaskBtn');
+  const overlay = document.getElementById('taskOverlay');
+  const closeBtn = document.getElementById('closeOverlay');
+
+  addBtn.addEventListener('click', () => overlay.classList.remove('d-none'));
+  closeBtn.addEventListener('click', () => overlay.classList.add('d-none'));
+
+  window.formatText = (cmd) => document.execCommand(cmd, false, null);
+  window.saveNote = () => {
+    document.getElementById('hiddenNote').value = document.getElementById('noteEditor').innerHTML;
+  };
+
+  const canvas = document.getElementById('priorityChart');
+  if (canvas) {
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: ['High', 'Medium', 'Low'],
+        datasets: [{
+          data: [5, 8, 2],
+          backgroundColor: ['#8b0000', '#c62828', '#ef9a9a'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        plugins: { legend: { labels: { color: '#eee' } } },
+        responsive: true,
+        maintainAspectRatio: true
       }
-    };
-    applyMainMargin();
-    window.addEventListener('resize', applyMainMargin);
-
-    // Chart.js: get 2d context
-    const canvas = document.getElementById('priorityChart');
-    if (canvas) {
-      const ctx = canvas.getContext('2d');
-      new Chart(ctx, {
-        type: 'pie',
-        data: {
-          labels: ['High', 'Medium', 'Low'],
-          datasets: [{
-            data: [5, 8, 2], // replace with real values via template if needed
-            backgroundColor: ['#8b0000', '#c62828', '#ef9a9a'],
-            borderWidth: 0
-          }]
-        },
-        options: {
-          plugins: { legend: { labels: { color: '#eee' } } },
-          responsive: true,
-          maintainAspectRatio: true
-        }
-      });
-    }
-  })();
+    });
+  }
+})();
 </script>
-
 {% endblock %}

@@ -10,79 +10,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="/static/css/styles.css">
-
-  <style>
-    body {
-      background-color: #0f0f0f;
-      font-family: 'Inter', sans-serif;
-      color: #f2f2f2;
-      overflow-x: hidden;
-      position: relative;
-    }
-
-    body::before {
-      content: "";
-      position: absolute;
-      top: -10%;
-      left: -10%;
-      width: 40%;
-      height: 60%;
-      background: radial-gradient(circle at top left, rgba(179, 0, 0, 0.25), transparent 70%);
-      filter: blur(80px);
-      z-index: -1;
-    }
-
-    header {
-      background-color: rgba(18,18,18,0.9);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.8rem 1.5rem;
-      border-bottom: 1px solid rgba(179,0,0,0.3);
-    }
-
-    .logo {
-      color: #fff;
-      font-size: 1.8rem;
-      font-weight: 600;
-      text-decoration: none;
-      letter-spacing: 1px;
-    }
-
-    .icon-btn {
-      background: none;
-      border: none;
-      color: #ccc;
-      font-size: 1.3rem;
-      transition: color 0.2s;
-    }
-
-    .icon-btn:hover {
-      color: #c62828;
-    }
-
-    /* Red scrollbar */
-    ::-webkit-scrollbar {
-      width: 8px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #1a1a1a;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #c62828;
-      border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #e53935;
-    }
-  </style>
+  
 </head>
 
 <body>
   <header>
-    <button class="icon-btn" id="sidebarToggle"><i class="bi bi-list"></i></button>
-    <a href="/" class="logo">TaskFlow</a>
-    <button class="icon-btn"><i class="bi bi-person-circle"></i></button>
+      <div id = 'logo'>Task Flow</div>
   </header>
 
   <main class="p-3">

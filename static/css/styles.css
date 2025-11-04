@@ -1,23 +1,101 @@
-body{
-    background-color: #f8f9fa;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-  }
+body {
+  background-color: #0f0f0f;
+  font-family: 'Inter', sans-serif;
+  color: #f2f2f2;
+  overflow-x: hidden;
+  position: relative;
+  min-height: 100vh;
+  display: block;
+}
 
-  .card {
-    border: none;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
 
-  .card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 18px rgba(0,0,0,0.15);
-  }
+body::before {
+  content: "";
+  position: absolute;
+  top: -10%;
+  left: -10%;
+  width: 40%;
+  height: 60%;
+  background: radial-gradient(circle at top left, rgba(179, 0, 0, 0.25), transparent 70%);
+  filter: blur(80px);
+  z-index: -1;
+}
 
-  input:focus, button:focus {
-    box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.25);
-  }
+header {
+  background-color: rgba(18,18,18,0.9);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem 1.5rem;
+  border-bottom: 1px solid rgba(179,0,0,0.3);
+}
+
+.logo {
+  color: #fff;
+  font-size: 1.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  letter-spacing: 1px;
+}
+
+#logo {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  font-size: 1.7rem;
+  font-weight: 550;
+  font-family: 'Bahnschrift';
+  padding: 10px 20px;
+  text-align: center;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  color: #ccc;
+  font-size: 1.3rem;
+  transition: color 0.2s;
+}
+
+.icon-btn:hover {
+  color: #c62828;
+}
+
+.card {
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+}
+
+input:focus, button:focus {
+  box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.25);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+::-webkit-scrollbar-thumb {
+  background: #c62828;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #e53935;
+}
+
+#addTaskBtn {
+  transition: transform 0.25s ease;
+}
+#addTaskBtn:active {
+  transform: scale(0.9);
+}
