@@ -1,35 +1,11 @@
 {% extends "layoutm.html" %}
 {% block title %}Home{% endblock %}
 {% block content %}
+
 <div class="container-fluid mt-4 position-relative px-0 min-vh-100">
-
-  <!-- Sidebar -->
-  <nav id="sidebar"
-       class="position-fixed top-0 start-0 vh-100 bg-dark bg-opacity-75 p-4 shadow-lg d-none"
-       style="width:240px; backdrop-filter:blur(20px); z-index:1100;
-              border-right:1px solid rgba(255,255,255,0.1);
-              transform:translateX(-100%); transition:transform .35s ease;">
-    <ul class="nav flex-column">
-      <li class="nav-item mb-2"><a href="/" class="nav-link text-light">Home</a></li>
-      <li class="nav-item mb-2"><a href="/timeline" class="nav-link text-light">Timeline</a></li>
-      <li class="nav-item mb-2"><a href="/notes" class="nav-link text-light">Notes</a></li>
-      <li class="nav-item mb-2"><a href="/overview" class="nav-link text-light">Overview</a></li>
-      <li class="nav-item"><a href="/logout" class="nav-link text-danger">Logout</a></li>
-    </ul>
-  </nav>
-
-  <div id="blurOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none"
-       style="backdrop-filter:blur(10px); background:rgba(60,0,0,0.45);
-              z-index:1050; opacity:0; transition:opacity .35s ease;"></div>
-
-  <button id="sidebarToggle" class="btn btn-danger position-fixed"
-          style="top:1.2rem; left:1.2rem; z-index:1200; border-radius:50%; width:45px; height:45px;">
-    <
-  </button>
-
   <div class="d-flex flex-wrap justify-content-between align-items-stretch w-100 px-4"
-       style="margin-top:5rem; gap:1.5rem;">
-
+       style="gap:1.5rem; margin-top:5rem;">
+       
     <!-- Priority Chart -->
     <div class="card bg-dark border-0 p-3 shadow-sm"
          style="flex:1 1 calc(33.33% - 1.5rem); min-width:300px;">
@@ -40,17 +16,16 @@
     <!-- Tasks Section -->
     <div class="card border-0 p-3 shadow-sm"
          style="flex:1 1 calc(33.33% - 1.5rem); min-width:300px;
-                backdrop-filter:blur(18px); background:rgba(30,30,30,0.35); position:relative; overflow:hidden;">
+                backdrop-filter:blur(18px); background:rgba(30,30,30,0.35);
+                position:relative; overflow:hidden;">
       <h5 class="mb-3 text-danger">Your Tasks</h5>
       <div class="overflow-auto pe-2" style="max-height:65vh;">
           {% for task in tasks %}
               <div class="mb-3 pb-2 border-bottom border-secondary border-opacity-10 d-flex align-items-center">
-                
                 <form method="post" action="/update" class="me-2">
                   <input type="hidden" name="task_id" value="{{ task.id }}">
                   <input type="checkbox" name="done" onchange="this.form.submit()" {% if task.done %}checked{% endif %}>
                 </form>
-
                 <div class="flex-grow-1">
                   <div class="d-flex justify-content-between align-items-start">
                     <h6 class="text-light mb-1 {% if task.done %}text-decoration-line-through opacity-50{% endif %}">
@@ -60,11 +35,10 @@
                   </div>
                   <small class="text-muted">{{ task.priority | capitalize }}</small>
                 </div>
-
               </div>
-              {% else %}
+          {% else %}
               <p class="text-secondary">No tasks yet.</p>
-              {% endfor %}
+          {% endfor %}
       </div>
       <div class="position-absolute bottom-0 start-0 w-100"
            style="height:70px; background:linear-gradient(to bottom, rgba(30,30,30,0), rgba(15,15,15,0.85)); pointer-events:none;">
@@ -88,7 +62,6 @@
         <button class="btn btn-danger w-100" type="submit" onclick="saveNote()">Save Note</button>
       </form>
     </div>
-
   </div>
 </div>
 
@@ -98,7 +71,7 @@
   +
 </button>
 
-<!-- Overlay Form -->
+<!-- Task Overlay -->
 <div id="taskOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none"
      style="background:rgba(0,0,0,0.55); backdrop-filter:blur(10px);
             z-index:2100; display:flex; justify-content:center; align-items:center;">
@@ -120,49 +93,9 @@
   </form>
 </div>
 
-<!-- Chart + Interactions -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 (function() {
-  const sidebar = document.getElementById('sidebar');
-  const blurOverlay = document.getElementById('blurOverlay');
-  const toggleBtn = document.getElementById('sidebarToggle');
-
-  function openSidebar(button) {
-    sidebar.classList.remove('d-none');
-    button.style.display = 'none';
-    setTimeout(() => {
-      sidebar.style.transform = 'translateX(0)';
-      blurOverlay.classList.remove('d-none');
-      setTimeout(() => blurOverlay.style.opacity = '1', 10);
-    }, 10);
-  }
-
-  function closeSidebar(button) {
-    sidebar.style.transform = 'translateX(-100%)';
-    blurOverlay.style.opacity = '0';
-    setTimeout(() => {
-      sidebar.classList.add('d-none');
-      blurOverlay.classList.add('d-none');
-      button.style.display = 'block';
-    }, 350);
-  }
-
-  toggleBtn && toggleBtn.addEventListener('click', () => openSidebar(toggleBtn));
-  blurOverlay && blurOverlay.addEventListener('click', () => closeSidebar(toggleBtn));
-
-  const addBtn = document.getElementById('addTaskBtn');
-  const overlay = document.getElementById('taskOverlay');
-  const closeBtn = document.getElementById('closeOverlay');
-
-  addBtn.addEventListener('click', () => overlay.classList.remove('d-none'));
-  closeBtn.addEventListener('click', () => overlay.classList.add('d-none'));
-
-  window.formatText = (cmd) => document.execCommand(cmd, false, null);
-  window.saveNote = () => {
-    document.getElementById('hiddenNote').value = document.getElementById('noteEditor').innerHTML;
-  };
-
   const canvas = document.getElementById('priorityChart');
   if (canvas) {
     const ctx = canvas.getContext('2d');
@@ -185,4 +118,5 @@
   }
 })();
 </script>
+
 {% endblock %}

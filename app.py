@@ -5,7 +5,6 @@ from helpers import login_required, first_login
 from cs50 import SQL
 from datetime import datetime, date
 
-
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
 
@@ -16,131 +15,168 @@ Session(app)
 db = SQL("sqlite:///users.db")
 
 
-@app.route('/login', methods = ['GET', 'POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
     session.clear()
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+
         if not username or not password:
-            print("Please enter all details!")
+            flash("Please enter all details!", "warn")
             return redirect('/login')
-        check = db.execute('select uid, username, passhash from users where username = ?', username)
+
+        check = db.execute('SELECT uid, username, passhash FROM users WHERE username = ?', username)
         if len(check) != 1 or not check_password_hash(check[0]['passhash'], password):
-            print(f'DEBUG: {len(check)}')
-            return redirect('/login')            
-        uid = check[0]['uid']
-        session['user_id'] = uid
+            flash("Invalid username or password!", "error")
+            return redirect('/login')
+
+        session['user_id'] = check[0]['uid']
+        flash(f"Welcome back, {username}!", "success")
         return redirect('/')
     return render_template('login.html')
 
-@app.route('/register', methods = ['GET', 'POST'])
+
+@app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
         repass = request.form.get('repass')
+
         if not username or not password or not repass:
-            print('Please enter all details!')
+            flash('Please enter all details!', 'warn')
             return redirect('/register')
         elif password != repass:
-            print('Passwords do not match!')
+            flash('Passwords do not match!', 'error')
             return redirect('/register')
-        msg = db.execute('insert into users(username, passhash) values(? , ?)', username, generate_password_hash(password))
-        if not msg:
-            print('Registration failed! Please try again!')
-            return redirect('/register')
-        uid = (db.execute('select uid from users where username = ?', username))[0]['uid']
-        first_login(uid)
-        print('Registration successful! Please log in!')
+
+        try:
+            db.execute('INSERT INTO users(username, passhash) VALUES(?, ?)', username, generate_password_hash(password))
+            uid = db.execute('SELECT uid FROM users WHERE username = ?', username)[0]['uid']
+            first_login(uid)
+            flash('Registration successful! Please log in.', 'success')
+        except Exception:
+            flash('Registration failed! Try again.', 'error')
+
         return redirect('/login')
+
     return render_template('register.html')
 
- 
-@app.route("/", methods = ['GET', 'POST'])
+
+@app.route("/", methods=['GET', 'POST'])
 @login_required
 def homepage():
     uid = session['user_id']
+
     if request.method == 'POST':
         task = request.form.get('tasks')
         priority = request.form.get('priority')
         desc = request.form.get('description')
         due = request.form.get('finby')
-        print("DUE IS: ", due)
+        notes = request.form.get('notes')
+
         if not task:
-            print('task cannot be empty!')
+            flash('Task cannot be empty!', 'warn')
         else:
             try:
-                db.execute(f'insert into data_{uid}(title, priority, description, finby) values(?, ?, ?, ?)', task, priority, desc, due)
+                db.execute(f'INSERT INTO data_{uid}(title, priority, description, finby) VALUES(?, ?, ?, ?)',
+                           task, priority, desc, due)
+                if notes:
+                    db.execute(f'INSERT INTO notes_{uid}(content) VALUES(?)', notes)
+                flash('Task added successfully!', 'success')
             except Exception as e:
-                print(task, priority, desc, due)
-                print('SQL ERROR: ', e)
-        return redirect('/')
-    dat = db.execute(f'Select * from data_{uid} where status = 0 order by date(finby) asc')
-    print(dat, uid)
-    return render_template('homepage.html', tasks = dat)
+                flash('Error saving task. Please try again.', 'error')
 
-@app.route('/update', methods = ["POST"])
+        return redirect('/')
+
+    dat = db.execute(f'SELECT * FROM data_{uid} WHERE status = 0 ORDER BY date(finby) ASC')
+    return render_template('homepage.html', tasks=dat)
+
+
+@app.route('/update', methods=['POST'])
 @login_required
 def update():
     uid = session['user_id']
     tid = request.form.get('task_id')
     done = 1 if request.form.get('done') else 0
-    db.execute(f"update data_{uid} set status = ? where id = ?", done, tid)
+    cdate = date.today().isoformat() if done else None
+    db.execute(f"UPDATE data_{uid} SET status = ?, donedate = ? WHERE id = ?", done, cdate, tid)
+    flash("Task updated successfully!", "success")
     return redirect('/')
 
-@app.route('/timeline', methods = ['GET', 'POST'])
+
+@app.route('/timeline')
 @login_required
 def timeline():
     uid = session['user_id']
     filter = request.args.get('filter', 'week')
-    act = {'week': 7, 'month' : 30, 'year': 365}[filter]
-    query = db.execute(f"select date(creation) as day, count(*) as total from data_{uid} where creation >= date('now', ?) group by day", f'-{act} days')
-    return render_template('timeline.html', data = query, period = filter)
+    act = {'week': 7, 'month': 30, 'year': 365}[filter]
 
-@app.route('/notes', methods = ['GET', 'POST'])
+    data_created = db.execute(
+        f"SELECT date(creation) AS day, COUNT(*) AS total FROM data_{uid} "
+        "WHERE creation >= date('now', ?) GROUP BY day",
+        f'-{act} days'
+    )
+    data_completed = db.execute(
+        f"SELECT date(donedate) AS day, COUNT(*) AS total FROM data_{uid} "
+        "WHERE status = 1 AND donedate >= date('now', ?) GROUP BY day",
+        f'-{act} days'
+    )
+
+    return render_template('timeline.html',
+                           data_created=data_created,
+                           data_completed=data_completed,
+                           period=filter)
+
+
+@app.route('/notes', methods=['GET', 'POST'])
 @login_required
 def notes():
     uid = session['user_id']
 
     if request.method == 'POST':
         note = request.form.get('notes')
-        if note:
-            db.execute(f'insert into notes_{uid}(content) values(?)', note)
+        if note and note.strip():
+            db.execute(f'INSERT INTO notes_{uid}(content) VALUES(?)', (note,))
+            flash("Note saved successfully!", "success")
+        else:
+            flash("Cannot save empty note!", "warn")
         return redirect('/notes')
-    
-    notes = db.execute(f'select * from notes_{uid} order by creation desc')
-    return render_template('notes.html', notes = notes)
 
-@app.route('/overview', methods = ['GET', 'POST'])
+    notes = db.execute(f'SELECT * FROM notes_{uid} ORDER BY creation DESC')
+    return render_template('notes.html', notes=notes)
+
+
+@app.route('/overview', methods=['GET', 'POST'])
 @login_required
 def overview():
     uid = session['user_id']
-    if request.method == 'POST':
-        title = request.form.get('title')
-        desc = request.form.get('description')
-        due = request.form.get('finby')
 
-        db.execute(f"INSERT INTO data_{uid} (title, description, finby) VALUES (?, ?, ?)", title, desc, due)
-        return redirect('/overview')
-    
-    cat = {'now': [], 'later': [], 'indefinite': [], 'flexible': []}
-    tasks = db.execute(f'select * from data_{uid}')
-    findate = 0
-    for task in tasks:  
+    if request.method == 'POST' and request.is_json:
+        try:
+            data = request.get_json()
+            tid = data.get('id')
+            done = data.get('done')
+            db.execute(f'UPDATE data_{uid} SET status=? WHERE id=?', done, tid)
+            flash("Task updated!", "success")
+        except Exception:
+            flash("Failed to update task.", "error")
+        return ('', 204)
+
+    cat = {'now': [], 'later': [], 'flexible': [], 'indefinite': []}
+    tasks = db.execute(f'SELECT * FROM data_{uid} WHERE status = 0')
+    for task in tasks:
         finby = task['finby']
-        print("FINBY IS", finby)
         if not finby:
             diff = None
         else:
             try:
-                findate = datetime.strptime(task['finby'], "%Y-%m-%d").date()
+                findate = datetime.strptime(finby, "%Y-%m-%d").date()
+                diff = (findate - date.today()).days
+            except:
+                diff = None
 
-            except ValueError:
-                print("VALUERROR")
-                findate = None
-            diff = (findate - date.today()).days if findate else None
-        print('FINDATE IS :',findate,'|DIFF IS:', diff,'AND ', tasks[1]['finby'])
         if diff is not None and diff <= 1:
             filt = 'now'
         elif diff is not None and diff <= 7:
@@ -149,13 +185,19 @@ def overview():
             filt = 'flexible'
         else:
             filt = 'indefinite'
-        cat[filt].append(task)
-    return render_template('overview.html', cat = cat)
 
+        cat[filt].append(task)
+
+    return render_template('overview.html',
+                           now=cat['now'],
+                           later=cat['later'],
+                           flexible=cat['flexible'],
+                           indefinite=cat['indefinite'])
 
 
 @app.route('/logout')
 @login_required
 def logout():
     session.clear()
+    flash("You have been logged out.", "success")
     return redirect('/login')

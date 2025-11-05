@@ -23,6 +23,7 @@ def first_login(user_id):
             priority TEXT CHECK(priority IN ('low', 'medium', 'high')),
             finby DATE,
             status integer default 0;
+            donedate date,
             creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)

@@ -1,23 +1,28 @@
-{% extends "layouta.html" %}
+{% extends 'layouta.html' %}
 
-{% block title %}
-    Login
-{% endblock %}
+{% block title %}Login{% endblock %}
 
 {% block content %}
-<div class="card p-4 shadow-sm" style="width: 22rem;">
-  <h4 class="text-center mb-3">Login</h4>
-  <form method="post">
+<div class="auth-box">
+  <h2 class="text-2xl fw-bold text-center mb-4">Welcome Back</h2>
+
+  <form action="/login" method="post">
     <div class="mb-3">
-      <input type="text" name="username" class="form-control" placeholder="Username" required>
+      <label class="form-label text-light">Username</label>
+      <input type="text" class="form-control" name="username" required>
     </div>
-    <div class="mb-3">
-      <input autofill = 'off' type="password" name="password" class="form-control" placeholder="Password" required>
+
+    <div class="mb-4">
+      <label class="form-label text-light">Password</label>
+      <input type="password" class="form-control" name="password" required>
     </div>
-    <button type="submit" class="btn btn-primary w-100">Login</button>
+
+    <button type="submit" class="btn btn-primary w-100 py-2 rounded-3">Login</button>
   </form>
-  <div class="text-center mt-3">
-    <a href="/register" class="text-decoration-none">Don't have an account? Register</a>
-  </div>
+
+  <p class="text-center mt-4 text-light small">
+    Don’t have an account?
+    <a href="/register" class="text-info text-decoration-none">Register</a>
+  </p>
 </div>
 {% endblock %}

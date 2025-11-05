@@ -99,3 +99,11 @@ input:focus, button:focus {
 #addTaskBtn:active {
   transform: scale(0.9);
 }
+
+#sidebarToggle {
+  position: fixed !important;
+  top: 1.2rem;
+  left: 1.2rem;
+  z-index: 2000 !important;
+}
+

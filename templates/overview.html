@@ -1,0 +1,125 @@
+{% extends "layoutm.html" %}
+{% block title %}Overview{% endblock %}
+{% block content %}
+<div class="container-fluid px-0 position-relative min-vh-100" style="overflow:hidden;">
+
+  <div class="d-grid" style="grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; height:100vh;">
+
+    <div class="p-4 position-relative"
+         style="background:rgba(255, 0, 0, 0.08); backdrop-filter:blur(25px) saturate(180%); border:1px solid rgba(255,255,255,0.04);">
+      <h5 class="text-danger fw-bold mb-3">Now</h5>
+      <div class="overflow-auto" style="max-height:80vh;">
+        {% for t in now %}
+          <div class="d-flex align-items-center justify-content-between rounded px-3 py-2 mb-2"
+               style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); color:#f8f9fa;">
+            <div class="form-check">
+              <input class="form-check-input bg-transparent border-light" type="checkbox"
+                     onchange="toggleTask(this, '{{t.id}}', 'now')" {% if t.done %}checked{% endif %}>
+              <label class="form-check-label small"
+                     style="color:#f8f9fa; text-decoration:{% if t.done %}line-through{% endif %};">
+                {{ t.title }}
+              </label>
+            </div>
+          </div>
+        {% else %}
+          <p class="text-secondary small">No tasks.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="p-4 position-relative"
+         style="background:rgba(0, 255, 80, 0.08); backdrop-filter:blur(25px) saturate(180%); border:1px solid rgba(255,255,255,0.04);">
+      <h5 class="text-success fw-bold mb-3">Later</h5>
+      <div class="overflow-auto" style="max-height:80vh;">
+        {% for t in later %}
+          <div class="d-flex align-items-center justify-content-between rounded px-3 py-2 mb-2"
+               style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); color:#f8f9fa;">
+            <div class="form-check">
+              <input class="form-check-input bg-transparent border-light" type="checkbox"
+                     onchange="toggleTask(this, '{{t.id}}', 'later')" {% if t.done %}checked{% endif %}>
+              <label class="form-check-label small"
+                     style="color:#f8f9fa; text-decoration:{% if t.done %}line-through{% endif %};">
+                {{ t.title }}
+              </label>
+            </div>
+          </div>
+        {% else %}
+          <p class="text-secondary small">No tasks.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="p-4 position-relative"
+         style="background:rgba(0, 150, 255, 0.08); backdrop-filter:blur(25px) saturate(180%); border:1px solid rgba(255,255,255,0.04);">
+      <h5 class="text-info fw-bold mb-3">Flexible</h5>
+      <div class="overflow-auto" style="max-height:80vh;">
+        {% for t in flexible %}
+          <div class="d-flex align-items-center justify-content-between rounded px-3 py-2 mb-2"
+               style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); color:#f8f9fa;">
+            <div class="form-check">
+              <input class="form-check-input bg-transparent border-light" type="checkbox"
+                     onchange="toggleTask(this, '{{t.id}}', 'flexible')" {% if t.done %}checked{% endif %}>
+              <label class="form-check-label small"
+                     style="color:#f8f9fa; text-decoration:{% if t.done %}line-through{% endif %};">
+                {{ t.title }}
+              </label>
+            </div>
+          </div>
+        {% else %}
+          <p class="text-secondary small">No tasks.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="p-4 position-relative"
+         style="background:rgba(160,160,160,0.07); backdrop-filter:blur(25px) saturate(180%); border:1px solid rgba(255,255,255,0.04);">
+      <h5 class="text-light fw-bold mb-3">Indefinite</h5>
+      <div class="overflow-auto" style="max-height:80vh;">
+        {% for t in indefinite %}
+          <div class="d-flex align-items-center justify-content-between rounded px-3 py-2 mb-2"
+               style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); color:#f8f9fa;">
+            <div class="form-check">
+              <input class="form-check-input bg-transparent border-light" type="checkbox"
+                     onchange="toggleTask(this, '{{t.id}}', 'indefinite')" {% if t.done %}checked{% endif %}>
+              <label class="form-check-label small"
+                     style="color:#f8f9fa; text-decoration:{% if t.done %}line-through{% endif %};">
+                {{ t.title }}
+              </label>
+            </div>
+          </div>
+        {% else %}
+          <p class="text-secondary small">No tasks.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+async function toggleTask(box, id) {
+  const done = box.checked ? 1 : 0;
+  const label = box.nextElementSibling;
+
+  // Instant local animation
+  label.style.transition = "all 0.3s ease";
+  label.style.opacity = "0.7";
+  label.style.textDecoration = done ? "line-through" : "none";
+
+  // Send update to backend silently
+  const res = await fetch("/overview", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id, done })
+  });
+
+  // Small confirmation flash (optional)
+  if (res.ok) {
+    box.parentElement.style.background = done
+      ? "rgba(40,255,80,0.1)"
+      : "rgba(255,255,255,0.06)";
+    setTimeout(() => (label.style.opacity = "1"), 250);
+  }
+}
+</script>
+{% endblock %}

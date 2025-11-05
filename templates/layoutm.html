@@ -6,23 +6,128 @@
   <title>{% block title %}{% endblock %}</title>
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-
   <link rel="stylesheet" href="/static/css/styles.css">
-  
 </head>
 
-<body>
+<body class="bg-dark text-light">
   <header>
-      <div id = 'logo'>Task Flow</div>
+    <div id="logo" class="p-3 fs-4 fw-bold text-danger">Task Flow</div>
   </header>
+
+  
+  <nav id="sidebar"
+       class="position-fixed top-0 start-0 vh-100 bg-dark bg-opacity-75 p-4 shadow-lg d-none"
+       style="width:240px; backdrop-filter:blur(20px); z-index:1100; border-right:1px solid rgba(255,255,255,0.1); transform:translateX(-100%); transition:transform .35s ease;">
+    <ul class="nav flex-column">
+      <li class="nav-item mb-2"><a href="/" class="nav-link text-light">Home</a></li>
+      <li class="nav-item mb-2"><a href="/timeline" class="nav-link text-light">Timeline</a></li>
+      <li class="nav-item mb-2"><a href="/notes" class="nav-link text-light">Notes</a></li>
+      <li class="nav-item mb-2"><a href="/overview" class="nav-link text-light">Overview</a></li>
+      <li class="nav-item"><a href="/logout" class="nav-link text-danger">Logout</a></li>
+    </ul>
+  </nav>
+
+  <div id="blurOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none"
+       style="backdrop-filter:blur(10px); background:rgba(60,0,0,0.45); z-index:1050; opacity:0; transition:opacity .35s ease;"></div>
+
+  <button id="sidebarToggle" class="btn btn-danger position-fixed"
+          style="top:1.2rem; left:1.2rem; z-index:1200; border-radius:50%; width:45px; height:45px;">
+    &lt;
+  </button>
 
   <main class="p-3">
     {% block content %}{% endblock %}
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+  <script>
+  (function() {
+    const sidebar = document.getElementById('sidebar');
+    const blurOverlay = document.getElementById('blurOverlay');
+    const toggleBtn = document.getElementById('sidebarToggle');
+    if (!sidebar || !toggleBtn) return;
+
+    function openSidebar(button) {
+      sidebar.classList.remove('d-none');
+      button.style.display = 'none';
+      setTimeout(() => {
+        sidebar.style.transform = 'translateX(0)';
+        blurOverlay.classList.remove('d-none');
+        setTimeout(() => blurOverlay.style.opacity = '1', 10);
+      }, 10);
+    }
+
+    function closeSidebar(button) {
+      sidebar.style.transform = 'translateX(-100%)';
+      blurOverlay.style.opacity = '0';
+      setTimeout(() => {
+        sidebar.classList.add('d-none');
+        blurOverlay.classList.add('d-none');
+        button.style.display = 'block';
+      }, 350);
+    }
+
+    toggleBtn.addEventListener('click', () => openSidebar(toggleBtn));
+    blurOverlay.addEventListener('click', () => closeSidebar(toggleBtn));
+  })();
+
+const addBtn = document.getElementById('addTaskBtn');
+const overlay = document.getElementById('taskOverlay');
+const closeBtn = document.getElementById('closeOverlay');
+
+if (addBtn && overlay && closeBtn) {
+  addBtn.addEventListener('click', () => overlay.classList.remove('d-none'));
+  closeBtn.addEventListener('click', () => overlay.classList.add('d-none'));
+}
+
+  </script>
+  <div id="toast"
+     class="position-fixed bottom-0 end-0 m-4 p-3 text-light bg-danger bg-opacity-75 rounded shadow-lg d-none"
+     style="z-index:3000; backdrop-filter:blur(10px); min-width:240px;">
+</div>
+
+<!-- Toast container -->
+<div id="toast"
+     class="position-fixed bottom-0 end-0 m-4 p-3 text-light bg-danger bg-opacity-75 rounded shadow-lg d-none"
+     style="z-index:3000; backdrop-filter:blur(10px); min-width:240px;">
+</div>
+
+<script>
+function showToast(msg, type = "error") {
+  const toast = document.getElementById("toast");
+  toast.textContent = msg;
+  toast.classList.remove("d-none");
+
+  // choose color based on type
+  toast.style.backgroundColor =
+      type === "success" ? "rgba(40,255,80,0.25)" :
+      type === "warn"    ? "rgba(255,200,0,0.25)" :
+                           "rgba(255,50,50,0.25)";
+
+  // optional fade-in effect
+  toast.style.transition = "opacity 0.3s ease";
+  toast.style.opacity = 1;
+
+  // hide automatically after 2.5s
+  setTimeout(() => {
+    toast.style.opacity = 0;
+    setTimeout(() => toast.classList.add("d-none"), 300);
+  }, 2500);
+}
+</script>
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <script>
+      {% for category, msg in messages %}
+        showToast("{{ msg }}", "{{ category }}");
+      {% endfor %}
+    </script>
+  {% endif %}
+{% endwith %}
+
 </body>
 </html>

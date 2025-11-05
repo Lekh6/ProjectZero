@@ -1,0 +1,84 @@
+{% extends "layoutm.html" %}
+{% block title %}Notes{% endblock %}
+{% block content %}
+<div class="container-fluid mt-4 position-relative px-0 min-vh-100">
+  <div class="d-flex justify-content-between align-items-center mb-3" style="margin-top:5rem;">
+    <h4 class="text-danger mb-0">Notes</h4>
+    <a href="/" class="btn btn-outline-light">Back</a>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-6">
+      <div class="card bg-dark border-0 p-3 shadow-sm" style="backdrop-filter:blur(12px);">
+        <h6 class="text-danger mb-3">Create / Quick Note</h6>
+        <div class="btn-group mb-2" role="group">
+          <button type="button" class="btn btn-sm btn-outline-light" onclick="formatText('bold')"><b>B</b></button>
+          <button type="button" class="btn btn-sm btn-outline-light" onclick="formatText('italic')"><i>I</i></button>
+          <button type="button" class="btn btn-sm btn-outline-light" onclick="formatText('underline')"><u>U</u></button>
+          <button type="button" class="btn btn-sm btn-outline-light" onclick="formatText('insertUnorderedList')">•</button>
+        </div>
+        <form method="post" action="/notes" onsubmit="saveNote()">
+          <div id="noteEditor" class="form-control bg-dark text-light mb-3" contenteditable="true" style="height:280px; overflow-y:auto;"></div>
+          <input type="hidden" name="notes" id="hiddenNote">
+          <div class="d-flex gap-2">
+            <button class="btn btn-danger w-100" type="submit">Save Note</button>
+            <button type="button" id="clearNote" class="btn btn-outline-light w-100">Clear</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card border-0 p-3 shadow-sm" style="background:rgba(20,20,20,0.35);">
+        <h6 class="text-danger mb-3">Your Notes</h6>
+        <div class="overflow-auto" style="max-height:70vh;">
+          {% for n in notes %}
+            <div class="mb-3 p-3 rounded" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.03);">
+              <div class="d-flex justify-content-between align-items-start">
+                <div class="me-2" style="flex:1; overflow:hidden;">
+                  <div class="text-light small mb-2" style="max-height:6.5rem; overflow:hidden;" title="Click to view full note" onclick="openViewer({{ loop.index0 }})">
+                    {{ n.content | safe }}
+                  </div>
+                  <small class="text-secondary">{{ n.creation }}</small>
+                </div>
+              </div>
+            </div>
+          {% else %}
+            <p class="text-secondary">No notes yet. Write one on the left and save.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="noteModal" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background:rgba(0,0,0,0.6); z-index:2200; display:flex; align-items:center; justify-content:center;">
+  <div class="bg-dark text-light p-4 rounded" style="width:720px; max-width:95%; max-height:85vh; overflow:auto; border:1px solid rgba(255,255,255,0.06);">
+    <div id="modalContent" class="mb-3"></div>
+    <div class="d-flex justify-content-end">
+      <button class="btn btn-outline-light me-2" onclick="closeViewer()">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  window.formatText = (cmd) => document.execCommand(cmd, false, null);
+  window.saveNote = () => {
+    document.getElementById('hiddenNote').value = document.getElementById('noteEditor').innerHTML;
+  };
+  document.getElementById('clearNote').addEventListener('click', () => {
+    document.getElementById('noteEditor').innerHTML = '';
+  });
+
+  window.openViewer = (idx) => {
+    const notes = Array.from(document.querySelectorAll('[title="Click to view full note"]')).map(el => el.innerHTML);
+    const modal = document.getElementById('noteModal');
+    const content = document.getElementById('modalContent');
+    content.innerHTML = notes[idx] || 'No content';
+    modal.classList.remove('d-none');
+  };
+  window.closeViewer = () => document.getElementById('noteModal').classList.add('d-none');
+})();
+</script>
+{% endblock %}
