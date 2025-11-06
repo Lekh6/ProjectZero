@@ -90,8 +90,14 @@ def homepage():
 
         return redirect('/')
 
+
+    high = db.execute(f"SELECT COUNT(*) as c FROM data_{uid} WHERE priority='high'")[0]['c']
+    medium = db.execute(f"SELECT COUNT(*) as c FROM data_{uid} WHERE priority='medium'")[0]['c']
+    low = db.execute(f"SELECT COUNT(*) as c FROM data_{uid} WHERE priority='low'")[0]['c']
     dat = db.execute(f'SELECT * FROM data_{uid} WHERE status = 0 ORDER BY date(finby) ASC')
-    return render_template('homepage.html', tasks=dat)
+    return render_template('homepage.html', tasks=dat, counts=[high, medium, low])
+
+    
 
 
 @app.route('/update', methods=['POST'])
